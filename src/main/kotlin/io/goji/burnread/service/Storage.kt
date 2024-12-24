@@ -1,13 +1,18 @@
-package io.goji.service
+package io.goji.io.goji.burnread.service
 
-import config.Config
+import io.goji.io.goji.burnread.config.Config
+import io.lettuce.core.ClientOptions
 import io.lettuce.core.RedisClient
 import io.lettuce.core.RedisURI
+import io.lettuce.core.TimeoutOptions
 import io.lettuce.core.api.coroutines
 import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
+import io.lettuce.core.resource.ClientResources
+import io.lettuce.core.resource.DefaultClientResources
 import io.vertx.core.Vertx
 import io.vertx.core.json.Json
-import model.StoredMessage
+import io.goji.io.goji.burnread.model.StoredMessage
+import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
 interface MessageStorage {
@@ -38,6 +43,8 @@ class InMemoryStorage : MessageStorage {
 }
 
 class RedisStorage(private val vertx: Vertx) : MessageStorage {
+    private val clientResources: ClientResources = DefaultClientResources.builder()
+        .build()
     private val redisClient: RedisClient
     private val redisCommands: RedisCoroutinesCommands<String, String>
 
@@ -50,7 +57,21 @@ class RedisStorage(private val vertx: Vertx) : MessageStorage {
             .withDatabase(redisConfig.getInteger("database"))
             .build()
 
-        redisClient = RedisClient.create(redisUri)
+
+        redisClient = RedisClient
+            .create(clientResources, redisUri)
+        redisClient.options = ClientOptions.builder()
+            // 设置断开连接超时
+            .disconnectedBehavior(ClientOptions.DisconnectedBehavior.REJECT_COMMANDS)
+            // 设置超时选项
+            .timeoutOptions(
+                TimeoutOptions.builder()
+                    .fixedTimeout(Duration.ofSeconds(10))
+                    .build())
+            // 设置是否启用自动重连
+            .autoReconnect(true)
+            .build()
+
         val connection = redisClient.connect()
         redisCommands = connection.coroutines()
     }
@@ -77,7 +98,6 @@ class RedisStorage(private val vertx: Vertx) : MessageStorage {
     }
 
     override suspend fun cleanup(currentTime: Long) {
-        // Redis会自动通过TTL清理过期消息，无需实现
     }
 
     fun close() {

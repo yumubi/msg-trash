@@ -1,4 +1,4 @@
-package service
+package io.goji.io.goji.burnread.service
 
 import io.vertx.core.Handler
 import io.vertx.ext.web.RoutingContext

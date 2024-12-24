@@ -1,4 +1,4 @@
-package config
+package io.goji.io.goji.burnread.config
 
 import com.typesafe.config.ConfigFactory
 import io.vertx.core.json.JsonObject

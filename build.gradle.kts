@@ -1,7 +1,9 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     kotlin("jvm") version "1.9.21"
-    kotlin("plugin.serialization") version "1.9.21"
-    application
+    id("com.github.johnrengelman.shadow") version("8.1.1")
+    id("application")
 }
 
 group = "io.goji"
@@ -19,9 +21,15 @@ dependencies {
     implementation("io.vertx:vertx-lang-kotlin")
     implementation("io.vertx:vertx-lang-kotlin-coroutines")
 
-    // Kotlin serialization
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
 
+    // Kotlin coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.7.3")
+
+    // serialization
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2")
 
     // Redis client
     implementation("io.lettuce:lettuce-core:6.3.1.RELEASE")
@@ -37,7 +45,17 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation("io.vertx:vertx-junit5")
 }
+application {
+    mainClass.set("MainKt")
+}
 
+
+tasks.withType<KotlinCompile> {
+    kotlinOptions {
+        jvmTarget = "21"
+        freeCompilerArgs = listOf("-Xjsr305=strict")
+    }
+}
 tasks.test {
     useJUnitPlatform()
 }
@@ -45,6 +63,4 @@ kotlin {
     jvmToolchain(21)
 }
 
-application {
-    mainClass.set("MainKt")
-}
+

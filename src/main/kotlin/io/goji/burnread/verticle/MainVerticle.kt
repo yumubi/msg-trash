@@ -1,6 +1,7 @@
-package verticle
+package io.goji.io.goji.burnread.verticle
 
-import config.Config
+import io.goji.io.goji.burnread.config.Config
+import io.goji.io.goji.burnread.service.*
 import io.vertx.core.Vertx
 import io.vertx.core.http.HttpMethod
 import io.vertx.ext.web.Router
@@ -11,8 +12,6 @@ import io.vertx.kotlin.coroutines.CoroutineVerticle
 import io.vertx.kotlin.coroutines.coAwait
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
-import service.*
-import kotlin.math.log
 
 private val logger = KotlinLogging.logger {}
 class MainVerticle(
@@ -32,35 +31,41 @@ class MainVerticle(
 
 
 
-        // CORS Handler
-        val corsHandler = CorsHandler.create()
-            .addOrigin(Config.serverConfig.getString("allowedOrigin"))
-            .allowedMethods(Config.serverConfig
-                .getJsonArray("allowedMethods").map { HttpMethod.valueOf(it.toString()) }
-                .toSet())
-            .allowedHeaders(Config.serverConfig
-                .getJsonArray("allowedHeaders").map { it.toString() }
-                .toSet())
-            .maxAgeSeconds(Config.serverConfig.getLong("maxAgeSeconds").toInt())
 
+//        val corsHandler = CorsHandler.create()
+//            .addOrigin(Config.serverConfig.getString("corsAllowedOrigins"))
+//            .allowedMethods(Config.serverConfig
+//                .getJsonArray("corsAllowedMethods").map { HttpMethod.valueOf(it.toString()) }
+//                .toSet())
+//            .allowedHeaders(Config.serverConfig
+//                .getJsonArray("corsAllowedHeaders").map { it.toString() }
+//                .toSet())
+//            .maxAgeSeconds(Config.serverConfig.getLong("corsMaxAge").toInt())
+//
+//        router.route().handler(corsHandler)
 
-
+        // Configure CORS
+        router.route().handler { ctx ->
+            ctx.response()
+                .putHeader("Access-Control-Allow-Origin", Config.serverConfig.getString("corsAllowedOrigins"))
+                .putHeader("Access-Control-Allow-Methods", Config.serverConfig.getJsonArray("corsAllowedMethods").joinToString(","))
+                .putHeader("Access-Control-Allow-Headers", Config.serverConfig.getJsonArray("corsAllowedHeaders").joinToString(","))
+                .putHeader("Access-Control-Max-Age", Config.serverConfig.getLong("corsMaxAge").toString())
+            ctx.next()
+        }
 
 
         // Apply rate limiter to all routes
         router.route()
-            .handler{
-                corsHandler.handle(it)
-                BodyHandler.create().handle(it)
-                rateLimiter.handler()
-            }
-
+            .handler(BodyHandler.create())
+            .handler(rateLimiter.handler())
 
 
 
 
         // Metrics endpoint
-        router.get("/metrics").coHandler { ctx->
+        router
+            .get("/metrics").coHandler { ctx->
             val metrics = metricsCollector.getMetrics()
             ctx.response()
                 .putHeader("Content-Type", "application/json")
@@ -73,12 +78,10 @@ class MainVerticle(
         router.post("/api/messages").handler { ctx ->
             launch {
                 try {
-                    logger.debug { "Received request to create message" }
                     val body = ctx.body().asJsonObject()
                     val message = body.getString("message")
 
                     val ttl = body.getLong("ttl", Config.messageConfig.getLong("defaultTtl"))
-                    logger.debug { "Creating message with TTL $ttl, content is $message" }
                     // Validate message
                     val validateResult = messageValidator.validate(message, ttl, Config.messageConfig.getLong("maxTtl"))
                     if(!validateResult.isValid) {
@@ -189,7 +192,7 @@ class MainVerticle(
         }
 
         // Start the server
-        val port = System.getenv("PORT")?.toInt() ?: 8080
+        val port = System.getenv("PORT")?.toInt() ?: 5432
         vertx.createHttpServer()
             .requestHandler(router)
             .listen(port)

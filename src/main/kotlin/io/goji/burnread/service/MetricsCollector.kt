@@ -1,4 +1,4 @@
-package service
+package io.goji.io.goji.burnread.service
 
 import io.vertx.core.json.JsonObject
 import java.util.concurrent.atomic.AtomicLong

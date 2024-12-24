@@ -1,6 +1,6 @@
-package service
+package io.goji.io.goji.burnread.service
 
-import model.EncryptedData
+import io.goji.io.goji.burnread.model.EncryptedData
 import java.security.SecureRandom
 import java.util.Base64
 import javax.crypto.Cipher
@@ -26,7 +26,6 @@ class EncryptionService {
         val paramSpec = GCMParameterSpec(GCM_TAG_LENGTH * 8, iv)
 
         cipher.init(Cipher.ENCRYPT_MODE, key, paramSpec)
-        val ciphertext = cipher.doFinal(plaintext.toByteArray())
         val encryptedBytes = cipher.doFinal(plaintext.toByteArray())
 
         return EncryptedData(
@@ -37,7 +36,7 @@ class EncryptionService {
     }
 
     fun decrypt(encryptedData: EncryptedData): String {
-        val cipher = Cipher.getInstance("AES/GCM/NoPadding", "BC")
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         val iv = Base64.getDecoder().decode(encryptedData.iv)
         val paramSpec = GCMParameterSpec(GCM_TAG_LENGTH * 8, iv)
         cipher.init(Cipher.DECRYPT_MODE, key, paramSpec)

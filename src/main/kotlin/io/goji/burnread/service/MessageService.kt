@@ -1,15 +1,14 @@
-package service
+package io.goji.io.goji.burnread.service
 
-import config.Config
-import io.goji.service.MessageStorage
+import io.goji.io.goji.burnread.config.Config
 import io.vertx.core.Vertx
 import io.vertx.kotlin.coroutines.dispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import model.EncryptedData
-import model.StoredMessage
+import io.goji.io.goji.burnread.model.EncryptedData
+import io.goji.io.goji.burnread.model.StoredMessage
 import mu.KotlinLogging
 import java.util.*
 

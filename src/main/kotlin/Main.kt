@@ -1,11 +1,9 @@
-package io.goji
-
-import config.Config
-import io.goji.service.InMemoryStorage
-import io.goji.service.RedisStorage
+import io.goji.io.goji.burnread.config.Config
+import io.goji.io.goji.burnread.service.InMemoryStorage
+import io.goji.io.goji.burnread.service.RedisStorage
 import io.vertx.core.Vertx
-import service.MessageService
-import verticle.MainVerticle
+import io.goji.io.goji.burnread.service.MessageService
+import io.goji.io.goji.burnread.verticle.MainVerticle
 
 fun main() {
     val vertx = Vertx.vertx()
