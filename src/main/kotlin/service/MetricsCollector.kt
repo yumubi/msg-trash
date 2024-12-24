@@ -11,6 +11,9 @@ class MetricsCollector {
     private val messageCreated = AtomicLong(0)
     private val messageRead = AtomicLong(0)
     private val messageExpired = AtomicLong(0)
+    private val messageDenied = AtomicLong(0)
+    private val messageNotFound = AtomicLong(0)
+
     private val requestLatencies = ConcurrentHashMap<String, MutableList<Long>>()
 
     suspend fun recordMessageCreation() = mutex.withLock {
@@ -25,6 +28,14 @@ class MetricsCollector {
         messageExpired.incrementAndGet()
     }
 
+    suspend fun recordMessageDenied() = mutex.withLock {
+        messageDenied.incrementAndGet()
+    }
+
+    suspend fun recordMessageNotFound() = mutex.withLock {
+        messageNotFound.incrementAndGet()
+    }
+
     suspend fun recordLatency(endpoint: String, latencyMs: Long) = mutex.withLock {
         requestLatencies.computeIfAbsent(endpoint) { mutableListOf() }.add(latencyMs)
     }
@@ -35,6 +46,8 @@ class MetricsCollector {
                 .put("created", messageCreated.get())
                 .put("read", messageRead.get())
                 .put("expired", messageExpired.get())
+                .put("denied", messageDenied.get())
+                .put("not_found", messageNotFound.get())
             )
             .put("latencies", JsonObject().apply {
                 requestLatencies.forEach { (endpoint, latencies) ->
